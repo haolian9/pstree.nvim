@@ -1,8 +1,4 @@
-
-## features
-* viewing pstree result in a nvim window
-* proper folding
-* showing a process's hover info
+showing pstree in nvim
 
 ## prerequisites
 * linux
@@ -12,5 +8,7 @@
 ## status: just-work
 
 ## usage
-* `.run()` to run this plugin
-* `nnmap K` to get one process's hover info
+* `:lua require'pstree'.run()`
+
+## keymaps bound to the pstree buffer
+* nmap K: show one process's info
