@@ -6,6 +6,9 @@ local fn = require("infra.fn")
 local subprocess = require("infra.subprocess")
 local jelly = require("infra.jellyfish")("pstree")
 local bufrename = require("infra.bufrename")
+local listlib = require("infra.listlib")
+local prefer = require("infra.prefer")
+local bufmap = require("infra.keymap.buffer")
 
 -- used for &foldexpr
 -- :h fold-expr
@@ -80,9 +83,9 @@ local function rhs_hover()
   assert(pid ~= nil)
 
   local bufnr = api.nvim_create_buf(false, true)
-  api.nvim_buf_set_option(bufnr, "bufhidden", "wipe")
+  prefer.bo(bufnr, "bufhidden", "wipe")
 
-  subprocess.asyncrun("ps", { args = { "-orss,trs,drs,vsz,cputime,tty,lstart", tostring(pid) } }, function(iter)
+  subprocess.spawn("ps", { args = { "-orss,trs,drs,vsz,cputime,tty,lstart", tostring(pid) } }, function(iter)
     local start = 0
     for lines in fn.batch(iter, 50) do
       local stop = start + #lines
@@ -91,36 +94,33 @@ local function rhs_hover()
     end
   end, function(exit_code)
     if exit_code == 0 then return end
-    vim.schedule(function()
-      jelly.err("unable to get process info of %d, exit=%d", pid, exit_code)
-    end)
+    vim.schedule(function() jelly.err("unable to get process info of %d, exit=%d", pid, exit_code) end)
   end)
 
-  local win_id
+  local winid
   do
     -- depends on the output of ps
     local width, height = 70, 2
     -- stylua: ignore
-    win_id = api.nvim_open_win(bufnr, true, {
+    winid = api.nvim_open_win(bufnr, true, {
       relative = "cursor", style = "minimal",
       width = width, height = height, row = 1, col = 0,
     })
-    api.nvim_win_set_buf(win_id, bufnr)
+    api.nvim_win_set_buf(winid, bufnr)
   end
 
   do
     api.nvim_create_autocmd("WinLeave", {
       buffer = bufnr,
       callback = function()
-        api.nvim_win_close(win_id, true)
+        api.nvim_win_close(winid, true)
         return true
       end,
     })
-    local function rhs_close_win()
-      vim.api.nvim_win_close(win_id, false)
-    end
-    api.nvim_buf_set_keymap(bufnr, "n", "q", "", { noremap = true, callback = rhs_close_win })
-    api.nvim_buf_set_keymap(bufnr, "n", "<c-]>", "", { noremap = true, callback = rhs_close_win })
+    local function rhs_close_win() vim.api.nvim_win_close(winid, false) end
+    local bm = bufmap.wraps(bufnr)
+    bm.n("q", rhs_close_win)
+    bm.n("<c-]>", rhs_close_win)
   end
 end
 
@@ -131,17 +131,17 @@ function M.run(extra)
   extra = extra or {}
 
   local args = { "-A", "-acnpt" }
-  fn.list_extend(args, extra)
+  listlib.extend(args, extra)
 
   count = count + 1
 
   local bufnr = api.nvim_create_buf(false, true)
-  api.nvim_buf_set_option(bufnr, "bufhidden", "wipe")
+  prefer.bo(bufnr, "bufhidden", "wipe")
   bufrename(bufnr, string.format("pstree://%d", count))
-  api.nvim_buf_set_keymap(bufnr, "n", "K", "", { noremap = true, callback = rhs_hover })
+  bufmap(bufnr, "n", "K", rhs_hover)
 
   -- spawn
-  subprocess.asyncrun("/usr/bin/pstree", { args = args }, function(iter)
+  subprocess.spawn("/usr/bin/pstree", { args = args }, function(iter)
     local start = 0
     for lines in fn.batch(iter, 50) do
       local stop = start + #lines
@@ -150,18 +150,17 @@ function M.run(extra)
     end
   end, function(exit_code)
     if exit_code == 0 then return end
-    vim.schedule(function()
-      jelly.err("unable to get pstree", exit_code)
-    end)
+    vim.schedule(function() jelly.err("unable to get pstree", exit_code) end)
   end)
 
   -- win setup
   do
-    local win_id = api.nvim_get_current_win()
-    api.nvim_win_set_option(win_id, "foldenable", true)
-    api.nvim_win_set_option(win_id, "foldmethod", "expr")
-    api.nvim_win_set_option(win_id, "foldexpr", [[v:lua.require'pstree'.fold(v:lnum)]])
-    api.nvim_win_set_buf(win_id, bufnr)
+    local winid = api.nvim_get_current_win()
+    local wo = prefer.win(winid)
+    wo.foldenable = true
+    wo.foldmethod = "expr"
+    wo.foldexpr = [[v:lua.require'pstree'.fold(v:lnum)]]
+    api.nvim_win_set_buf(winid, bufnr)
   end
 end
 
