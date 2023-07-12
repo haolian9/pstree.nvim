@@ -2,13 +2,13 @@ local M = {}
 
 local api = vim.api
 
-local fn = require("infra.fn")
-local subprocess = require("infra.subprocess")
-local jelly = require("infra.jellyfish")("pstree")
 local bufrename = require("infra.bufrename")
+local fn = require("infra.fn")
+local jelly = require("infra.jellyfish")("pstree")
+local bufmap = require("infra.keymap.buffer")
 local listlib = require("infra.listlib")
 local prefer = require("infra.prefer")
-local bufmap = require("infra.keymap.buffer")
+local subprocess = require("infra.subprocess")
 
 -- used for &foldexpr
 -- :h fold-expr
@@ -112,10 +112,8 @@ local function rhs_hover()
   do
     api.nvim_create_autocmd("WinLeave", {
       buffer = bufnr,
-      callback = function()
-        api.nvim_win_close(winid, true)
-        return true
-      end,
+      once = true,
+      callback = function() api.nvim_win_close(winid, true) end,
     })
     local function rhs_close_win() vim.api.nvim_win_close(winid, false) end
     local bm = bufmap.wraps(bufnr)
