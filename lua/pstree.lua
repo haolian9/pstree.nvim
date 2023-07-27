@@ -4,6 +4,7 @@ local api = vim.api
 
 local bufrename = require("infra.bufrename")
 local fn = require("infra.fn")
+local handyclosekeys = require("infra.handyclosekeys")
 local jelly = require("infra.jellyfish")("pstree")
 local bufmap = require("infra.keymap.buffer")
 local listlib = require("infra.listlib")
@@ -109,17 +110,7 @@ local function rhs_hover()
     api.nvim_win_set_buf(winid, bufnr)
   end
 
-  do
-    api.nvim_create_autocmd("WinLeave", {
-      buffer = bufnr,
-      once = true,
-      callback = function() api.nvim_win_close(winid, true) end,
-    })
-    local function rhs_close_win() vim.api.nvim_win_close(winid, false) end
-    local bm = bufmap.wraps(bufnr)
-    bm.n("q", rhs_close_win)
-    bm.n("<c-]>", rhs_close_win)
-  end
+  handyclosekeys(bufnr)
 end
 
 local count = 0
