@@ -3,6 +3,7 @@ local M = {}
 local api = vim.api
 
 local bufrename = require("infra.bufrename")
+local Ephemeral = require("infra.Ephemeral")
 local fn = require("infra.fn")
 local handyclosekeys = require("infra.handyclosekeys")
 local jelly = require("infra.jellyfish")("pstree")
@@ -83,8 +84,8 @@ local function rhs_hover()
   end
   assert(pid ~= nil)
 
-  local bufnr = api.nvim_create_buf(false, true)
-  prefer.bo(bufnr, "bufhidden", "wipe")
+  local bufnr = Ephemeral()
+  handyclosekeys(bufnr)
 
   subprocess.spawn("ps", { args = { "-orss,trs,drs,vsz,cputime,tty,lstart", tostring(pid) } }, function(iter)
     local start = 0
@@ -98,19 +99,15 @@ local function rhs_hover()
     vim.schedule(function() jelly.err("unable to get process info of %d, exit=%d", pid, exit_code) end)
   end)
 
-  local winid
   do
     -- depends on the output of ps
     local width, height = 70, 2
     -- stylua: ignore
-    winid = api.nvim_open_win(bufnr, true, {
+    api.nvim_open_win(bufnr, true, {
       relative = "cursor", style = "minimal",
       width = width, height = height, row = 1, col = 0,
     })
-    api.nvim_win_set_buf(winid, bufnr)
   end
-
-  handyclosekeys(bufnr)
 end
 
 local count = 0
@@ -124,12 +121,10 @@ function M.run(extra)
 
   count = count + 1
 
-  local bufnr = api.nvim_create_buf(false, true)
-  prefer.bo(bufnr, "bufhidden", "wipe")
+  local bufnr = Ephemeral()
   bufrename(bufnr, string.format("pstree://%d", count))
   bufmap(bufnr, "n", "K", rhs_hover)
 
-  -- spawn
   subprocess.spawn("/usr/bin/pstree", { args = args }, function(iter)
     local start = 0
     for lines in fn.batch(iter, 50) do
@@ -142,8 +137,7 @@ function M.run(extra)
     vim.schedule(function() jelly.err("unable to get pstree", exit_code) end)
   end)
 
-  -- win setup
-  do
+  do -- win setup
     local winid = api.nvim_get_current_win()
     local wo = prefer.win(winid)
     wo.foldenable = true
