@@ -110,7 +110,14 @@ local function rhs_hover()
   end
 end
 
-local count = 0
+local next_id
+do
+  local count = 0
+  function next_id()
+    count = count + 1
+    return count
+  end
+end
 
 ---@param extra table @extra params for pstree command
 function M.run(extra)
@@ -119,10 +126,8 @@ function M.run(extra)
   local args = { "-A", "-acnpt" }
   listlib.extend(args, extra)
 
-  count = count + 1
-
   local bufnr = Ephemeral()
-  bufrename(bufnr, string.format("pstree://%d", count))
+  bufrename(bufnr, string.format("pstree://%d", next_id()))
   bufmap(bufnr, "n", "K", rhs_hover)
 
   subprocess.spawn("/usr/bin/pstree", { args = args }, function(iter)
