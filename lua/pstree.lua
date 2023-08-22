@@ -2,10 +2,8 @@ local M = {}
 
 local api = vim.api
 
-local bufrename = require("infra.bufrename")
 local Ephemeral = require("infra.Ephemeral")
 local fn = require("infra.fn")
-local handyclosekeys = require("infra.handyclosekeys")
 local jelly = require("infra.jellyfish")("pstree")
 local bufmap = require("infra.keymap.buffer")
 local listlib = require("infra.listlib")
@@ -84,8 +82,7 @@ local function rhs_hover()
   end
   assert(pid ~= nil)
 
-  local bufnr = Ephemeral()
-  handyclosekeys(bufnr)
+  local bufnr = Ephemeral({ handyclose = true })
 
   subprocess.spawn("ps", { args = { "-orss,trs,drs,vsz,cputime,tty,lstart", tostring(pid) } }, function(iter)
     local start = 0
@@ -100,22 +97,9 @@ local function rhs_hover()
   end)
 
   do
-    -- depends on the output of ps
-    local width, height = 70, 2
-    -- stylua: ignore
-    api.nvim_open_win(bufnr, true, {
-      relative = "cursor", style = "minimal",
-      width = width, height = height, row = 1, col = 0,
-    })
-  end
-end
-
-local next_id
-do
-  local count = 0
-  function next_id()
-    count = count + 1
-    return count
+    local width, height = 70, 2 --based on the output of ps
+    local winopts = { relative = "cursor", width = width, height = height, row = 1, col = 0 }
+    api.nvim_open_win(bufnr, true, winopts)
   end
 end
 
@@ -126,8 +110,7 @@ function M.run(extra)
   local args = { "-A", "-acnpt" }
   listlib.extend(args, extra)
 
-  local bufnr = Ephemeral()
-  bufrename(bufnr, string.format("pstree://%d", next_id()))
+  local bufnr = Ephemeral({ namepat = "pstree://{bufnr}" })
   bufmap(bufnr, "n", "K", rhs_hover)
 
   subprocess.spawn("/usr/bin/pstree", { args = args }, function(iter)
