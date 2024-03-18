@@ -8,6 +8,7 @@ local jelly = require("infra.jellyfish")("pstree")
 local bufmap = require("infra.keymap.buffer")
 local listlib = require("infra.listlib")
 local prefer = require("infra.prefer")
+local rifts = require("infra.rifts")
 local subprocess = require("infra.subprocess")
 
 -- used for &foldexpr
@@ -99,7 +100,7 @@ local function rhs_hover()
   do
     local width, height = 70, 2 --based on the output of ps
     local winopts = { relative = "cursor", width = width, height = height, row = 1, col = 0 }
-    api.nvim_open_win(bufnr, true, winopts)
+    rifts.open.win(bufnr, true, winopts)
   end
 end
 
