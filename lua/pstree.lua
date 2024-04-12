@@ -2,6 +2,7 @@ local M = {}
 
 local api = vim.api
 
+local buflines = require("infra.buflines")
 local Ephemeral = require("infra.Ephemeral")
 local fn = require("infra.fn")
 local jelly = require("infra.jellyfish")("pstree")
@@ -14,13 +15,8 @@ local subprocess = require("infra.subprocess")
 -- used for &foldexpr
 -- :h fold-expr
 ---@return number @fold level
-function M.fold(lnum)
-  local curline
-  do
-    local bufnr = api.nvim_get_current_buf()
-    local lines = api.nvim_buf_get_lines(bufnr, lnum - 1, lnum, true)
-    curline = lines[1]
-  end
+function M.fold(row)
+  local curline = assert(buflines.line(0, row - 1))
 
   if #curline == 0 then return 0 end
 
@@ -89,7 +85,7 @@ local function rhs_hover()
     local start = 0
     for lines in fn.batch(iter, 50) do
       local stop = start + #lines
-      api.nvim_buf_set_lines(bufnr, start, stop, false, lines)
+      buflines.replaces(bufnr, start, stop, lines)
       start = stop
     end
   end, function(exit_code)
@@ -118,7 +114,7 @@ function M.run(extra)
     local start = 0
     for lines in fn.batch(iter, 50) do
       local stop = start + #lines
-      api.nvim_buf_set_lines(bufnr, start, stop, false, lines)
+      buflines.replaces(bufnr, start, stop, lines)
       start = stop
     end
   end, function(exit_code)
