@@ -18,7 +18,7 @@ local subprocess = require("infra.subprocess")
 function M.fold(row)
   local curline = assert(buflines.line(0, row - 1))
 
-  if #curline == 0 then return 0 end
+  if curline == "" then return 0 end
 
   local indent = 0
   do
@@ -70,7 +70,7 @@ local function rhs_hover()
   do
     local line = api.nvim_get_current_line()
     -- blank line, it's possible
-    if #line == 0 then return end
+    if line == "" then return end
     -- a thread
     if string.match(line, "-{[%w-_]+},") ~= nil then return end
     local matched = string.match(line, ",%d+")
