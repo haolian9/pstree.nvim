@@ -90,7 +90,7 @@ local function rhs_hover()
     end
   end, function(exit_code)
     if exit_code == 0 then return end
-    vim.schedule(function() jelly.err("unable to get process info of %d, exit=%d", pid, exit_code) end)
+    jelly.err("unable to get process info of %d, exit=%d", pid, exit_code)
   end)
 
   do
@@ -119,7 +119,7 @@ function M.run(extra)
     end
   end, function(exit_code)
     if exit_code == 0 then return end
-    vim.schedule(function() jelly.err("unable to get pstree", exit_code) end)
+    jelly.err("unable to get pstree", exit_code)
   end)
 
   do -- win setup
