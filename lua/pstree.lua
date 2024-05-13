@@ -122,7 +122,7 @@ function M.run(extra)
     jelly.err("unable to get pstree", exit_code)
   end)
 
-  do -- win setup
+  do --win setup
     local winid = api.nvim_get_current_win()
     local wo = prefer.win(winid)
     wo.foldenable = true
