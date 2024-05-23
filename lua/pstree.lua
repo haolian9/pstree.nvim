@@ -4,7 +4,7 @@ local api = vim.api
 
 local buflines = require("infra.buflines")
 local Ephemeral = require("infra.Ephemeral")
-local fn = require("infra.fn")
+local itertools = require("infra.itertools")
 local jelly = require("infra.jellyfish")("pstree")
 local bufmap = require("infra.keymap.buffer")
 local listlib = require("infra.listlib")
@@ -83,7 +83,7 @@ local function rhs_hover()
 
   subprocess.spawn("ps", { args = { "-orss,trs,drs,vsz,cputime,tty,lstart", tostring(pid) } }, function(iter)
     local start = 0
-    for lines in fn.batch(iter, 50) do
+    for lines in itertools.batched(iter, 50) do
       local stop = start + #lines
       buflines.replaces(bufnr, start, stop, lines)
       start = stop
@@ -112,7 +112,7 @@ function M.run(extra)
 
   subprocess.spawn("/usr/bin/pstree", { args = args }, function(iter)
     local start = 0
-    for lines in fn.batch(iter, 50) do
+    for lines in itertools.batched(iter, 50) do
       local stop = start + #lines
       buflines.replaces(bufnr, start, stop, lines)
       start = stop
