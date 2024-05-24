@@ -81,16 +81,16 @@ local function rhs_hover()
 
   local bufnr = Ephemeral({ handyclose = true })
 
-  subprocess.spawn("ps", { args = { "-orss,trs,drs,vsz,cputime,tty,lstart", tostring(pid) } }, function(iter)
-    local start = 0
-    for lines in itertools.batched(iter, 50) do
-      local stop = start + #lines
-      buflines.replaces(bufnr, start, stop, lines)
-      start = stop
-    end
+  local chunks = {}
+  local stdout_closed = false
+  subprocess.spawn("ps", { args = { "-orss,trs,drs,vsz,cputime,tty,lstart", tostring(pid) } }, function(data)
+    if data ~= nil then table.insert(chunks, data) end
+    stdout_closed = true
   end, function(exit_code)
-    if exit_code == 0 then return end
-    jelly.err("unable to get process info of %d, exit=%d", pid, exit_code)
+    assert(stdout_closed)
+    if exit_code ~= 0 then return jelly.err("unable to get process info of %d, exit=%d", pid, exit_code) end
+    local lines = itertools.tolist(subprocess.iter_lines(chunks))
+    vim.schedule(function() buflines.replaces_all(bufnr, lines) end)
   end)
 
   do
@@ -110,16 +110,16 @@ function M.run(extra)
   local bufnr = Ephemeral({ namepat = "pstree://{bufnr}" })
   bufmap(bufnr, "n", "K", rhs_hover)
 
-  subprocess.spawn("/usr/bin/pstree", { args = args }, function(iter)
-    local start = 0
-    for lines in itertools.batched(iter, 50) do
-      local stop = start + #lines
-      buflines.replaces(bufnr, start, stop, lines)
-      start = stop
-    end
+  local chunks = {}
+  local stdout_closed = false
+  subprocess.spawn("/usr/bin/pstree", { args = args }, function(data)
+    if data ~= nil then return table.insert(chunks, data) end
+    stdout_closed = true
   end, function(exit_code)
-    if exit_code == 0 then return end
-    jelly.err("unable to get pstree", exit_code)
+    assert(stdout_closed)
+    if exit_code ~= 0 then return jelly.err("unable to get pstree", exit_code) end
+    local lines = itertools.tolist(subprocess.iter_lines(chunks))
+    vim.schedule(function() buflines.replaces_all(bufnr, lines) end)
   end)
 
   do --win setup
