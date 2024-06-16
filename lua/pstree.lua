@@ -1,13 +1,12 @@
 local M = {}
 
-local api = vim.api
-
 local buflines = require("infra.buflines")
 local Ephemeral = require("infra.Ephemeral")
 local itertools = require("infra.itertools")
 local jelly = require("infra.jellyfish")("pstree")
 local bufmap = require("infra.keymap.buffer")
 local listlib = require("infra.listlib")
+local ni = require("infra.ni")
 local prefer = require("infra.prefer")
 local rifts = require("infra.rifts")
 local subprocess = require("infra.subprocess")
@@ -68,7 +67,7 @@ end
 local function rhs_hover()
   local pid
   do
-    local line = api.nvim_get_current_line()
+    local line = ni.get_current_line()
     -- blank line, it's possible
     if line == "" then return end
     -- a thread
@@ -123,12 +122,12 @@ function M.run(extra)
   end)
 
   do --win setup
-    local winid = api.nvim_get_current_win()
+    local winid = ni.get_current_win()
     local wo = prefer.win(winid)
     wo.foldenable = true
     wo.foldmethod = "expr"
     wo.foldexpr = [[v:lua.require'pstree'.fold(v:lnum)]]
-    api.nvim_win_set_buf(winid, bufnr)
+    ni.win_set_buf(winid, bufnr)
   end
 end
 
