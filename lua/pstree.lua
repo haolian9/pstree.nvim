@@ -78,7 +78,7 @@ local function rhs_hover()
   end
   assert(pid ~= nil)
 
-  local bufnr = Ephemeral({ handyclose = true })
+  local bufnr = Ephemeral({ namepat = "pstree://hover/{bufnr}", handyclose = true })
 
   local chunks = {}
   local stdout_closed = false
