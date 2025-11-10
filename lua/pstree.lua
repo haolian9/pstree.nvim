@@ -1,6 +1,7 @@
 local M = {}
 
 local buflines = require("infra.buflines")
+local bufopen = require("infra.bufopen")
 local Ephemeral = require("infra.Ephemeral")
 local itertools = require("infra.itertools")
 local jelly = require("infra.jellyfish")("pstree")
@@ -100,8 +101,10 @@ local function rhs_hover()
 end
 
 ---@param extra table @extra params for pstree command
-function M.run(extra)
+---@param open_mode infra.bufopen.Mode
+function M.run(extra, open_mode)
   extra = extra or {}
+  open_mode = open_mode or "tab"
 
   local args = { "-A", "-acnpt" }
   listlib.extend(args, extra)
@@ -122,12 +125,12 @@ function M.run(extra)
   end)
 
   do --win setup
+    bufopen(open_mode, bufnr)
     local winid = ni.get_current_win()
     local wo = prefer.win(winid)
     wo.foldenable = true
     wo.foldmethod = "expr"
     wo.foldexpr = [[v:lua.require'pstree'.fold(v:lnum)]]
-    ni.win_set_buf(winid, bufnr)
   end
 end
 
