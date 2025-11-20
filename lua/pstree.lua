@@ -101,7 +101,7 @@ local function rhs_hover()
 end
 
 ---@param extra table @extra params for pstree command
----@param open_mode infra.bufopen.Mode
+---@param open_mode? infra.bufopen.Mode
 function M.run(extra, open_mode)
   extra = extra or {}
   open_mode = open_mode or "tab"
