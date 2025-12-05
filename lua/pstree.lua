@@ -72,7 +72,7 @@ local function rhs_hover()
     -- blank line, it's possible
     if line == "" then return end
     -- a thread
-    if string.match(line, "-{[%w-_]+},") ~= nil then return end
+    if string.find(line, "-{[%w-_]+},") ~= nil then return end
     local matched = string.match(line, ",%d+")
     if matched == nil then error(string.format('failed to find pid in line "%s"', line)) end
     pid = tonumber(string.sub(matched, 2))
